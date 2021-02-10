@@ -1,5 +1,6 @@
 import json
 
+
 def isEmpty(name, id): # If local repository is empty, fill it with initial data.
 
     with open('storage.json', 'w+') as f:
