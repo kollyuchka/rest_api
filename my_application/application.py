@@ -1,55 +1,53 @@
 from flask import request, make_response
 from my_application.models import User
-from my_application.additional_func import isEmpty, add_or_edit, delete
 import json
-import os
-from my_application import app,db
+from my_application import create_app, db
+from my_application.repository import App_Rep, Db_Rep
+
+app_rep = App_Rep()
+db_rep = Db_Rep()
+app = create_app()
+db.create_all(app=app)
 
 
 class Actions():
+
     @app.route("/user", methods=["POST"])  # Creating a new user.
     def create_user():
         full_name = json.loads(request.data)["full_name"]
         if bool(User.query.filter_by(full_name=full_name).first()):
             return make_response("User exists")
         else:
-            new_user = User(full_name=full_name)
-            db.session.add(new_user)  # Add a new user to db.
-            db.session.commit()
-            if os.stat('storage.json').st_size == 0:
-                isEmpty(new_user.full_name, new_user.id)
-            add_or_edit(new_user.full_name, new_user.id)  # Add a new user to local repository.
-        return make_response(f"user {new_user.full_name} successfully created!")
+            user = User(full_name=full_name)
 
+            db_rep.save(user)  # Add a new user to db.
+            user = User.query.get(full_name)
+            app_rep.save(user.id, user.full_name)  # Add a new user to app repository.
+            return make_response(f"{user} successfully created!")
 
     @app.route("/user/<id>", methods=["PUT"])  # Edit old user.
     def edite_user(id):
-        full_name = json.loads(request.data)["full_name"]
-        existing_user = User.query.get(id)
-        old_name = existing_user.full_name
-        existing_user.full_name = full_name
-        db.session.add(existing_user)  # Save the edited user to db.
-        db.session.commit()
-        add_or_edit(existing_user.full_name, existing_user.id) # Editing user in local storage.
-        return make_response(f"user {old_name}"
-                             f" replaced {existing_user.full_name}{f}")
-
+        new_user = User(full_name=json.loads(request.data)["full_name"])
+        old_user = User.query.get(id)
+        app_rep.edite(id, new_user)  # Editing user in app repository.
+        db_rep.edite(id, old_user, new_user)  # Editing user in db.
+        return make_response(f"user replaced {new_user}")
 
     @app.route("/user/<id>", methods=["GET"])  # Get user by id.
     def get_user(id):
-        existing_user = User.query.get(id)
-        user_name = existing_user.full_name
-        return make_response(f"user {user_name}")
+        user = db_rep.get(id)
+        return make_response(f"{user}")
 
-
-    @app.route("/user/<id>", methods=["DELETE"]) # Delete user by id.
+    @app.route("/user/<id>", methods=["DELETE"])  # Delete user by id.
     def delete_user(id):
-        delete_user = User.query.get(id)
-        old_name = delete_user.full_name
-        db.session.delete(delete_user)
-        db.session.commit()
-        delete(id) # Editing user in local storage.
-        return make_response(f"user {old_name} deleted")
+        app_rep.delete(id)  # Delete user from app repository.
+        user = db_rep.delete(id)  # Delete user from db.
+        return make_response(f"{user} deleted")
+
+    @app.route("/user/all", methods=["GET"])  # Get user by id.
+    def get_users():
+        user = app_rep.all()
+        return make_response(f"{user}")
 
 
 if __name__ == '__main__':

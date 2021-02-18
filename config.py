@@ -7,5 +7,5 @@ load_dotenv(dotenv_path)
 DB_NAME = os.getenv('DB_NAME')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 FLASK_APP = os.getenv('FLASK_APP')
-SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:' + DB_PASSWORD + "@localhost/" + DB_NAME
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:' + DB_PASSWORD + '@localhost/' + DB_NAME
 SQLALCHEMY_TRACK_MODIFICATIONS = False
