@@ -1,37 +1,48 @@
-from flask import request, make_response
+from flask import make_response, request
+from my_application import create_app, db
+from my_application.repository import  Db_Rep
 from my_application.models import User
 import json
-from my_application import create_app, db
-from my_application.repository import App_Rep, Db_Rep
 
-app_rep = App_Rep()
+
 db_rep = Db_Rep()
 app = create_app()
 db.create_all(app=app)
 
 
-class Actions():
+class MyInterface():
+    def create_user(self):
+        pass
 
-    @app.route("/user", methods=["POST"])  # Creating a new user.
+    def edite_user(self, id):
+        pass
+
+    def get_user(self, id):
+        pass
+
+    def delete_user(self, id):
+        pass
+
+
+class Interface_Db(MyInterface):
+
+    @app.route("/user", methods=["POST"])  # Creating a new user in db.
     def create_user():
         full_name = json.loads(request.data)["full_name"]
         if bool(User.query.filter_by(full_name=full_name).first()):
             return make_response("User exists")
         else:
             user = User(full_name=full_name)
-
-            db_rep.save(user)  # Add a new user to db.
-            user = User.query.get(full_name)
-            app_rep.save(user.id, user.full_name)  # Add a new user to app repository.
+            db_rep.save(user)
             return make_response(f"{user} successfully created!")
 
-    @app.route("/user/<id>", methods=["PUT"])  # Edit old user.
+
+    @app.route("/user/<id>", methods=["PUT"])  # Edit old user in db.
     def edite_user(id):
         new_user = User(full_name=json.loads(request.data)["full_name"])
-        old_user = User.query.get(id)
-        app_rep.edite(id, new_user)  # Editing user in app repository.
-        db_rep.edite(id, old_user, new_user)  # Editing user in db.
+        db_rep.edite(id, new_user)
         return make_response(f"user replaced {new_user}")
+
 
     @app.route("/user/<id>", methods=["GET"])  # Get user by id.
     def get_user(id):
@@ -40,14 +51,8 @@ class Actions():
 
     @app.route("/user/<id>", methods=["DELETE"])  # Delete user by id.
     def delete_user(id):
-        app_rep.delete(id)  # Delete user from app repository.
-        user = db_rep.delete(id)  # Delete user from db.
+        user = db_rep.delete(id)
         return make_response(f"{user} deleted")
-
-    @app.route("/user/all", methods=["GET"])  # Get user by id.
-    def get_users():
-        user = app_rep.all()
-        return make_response(f"{user}")
 
 
 if __name__ == '__main__':
