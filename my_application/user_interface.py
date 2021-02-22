@@ -8,7 +8,6 @@ from flask import make_response, request
 def is_non_zero_file(fpath):  # Сheck if file exists and is empty
     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
-
 def write_to_json(users):
     with open('storage.json', 'w+') as f:
         json.dump(users, f)
@@ -21,9 +20,6 @@ class User_Interface(ABC):
     @abstractmethod
     def save(self, user):
         pass
-    # @abstractmethod
-    # def all(self):
-    #     pass
     @abstractmethod
     def get(self, id):
         pass
